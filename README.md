@@ -152,3 +152,183 @@ response
 ```
 
 The middleware computes the expected response hash (from the HA1 computed on the fly in this example, precomputed value fetched from DB in a real world example) and compares it with the client’s response.
+
+## Session
+
+```bash
+curl -v localhost:8080/login/welcome --digest -u daniel:rockthejvm
+```
+
+```
+* Host localhost:8080 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+*   Trying [::1]:8080...
+* Connected to localhost (::1) port 8080
+* Server auth using Digest with user 'daniel'
+> GET /login/welcome HTTP/1.1
+> Host: localhost:8080
+> User-Agent: curl/8.9.1
+> Accept: */*
+>
+* Request completely sent off
+< HTTP/1.1 401 Unauthorized
+< Date: Thu, 17 Apr 2025 16:55:48 GMT
+< Connection: keep-alive
+< WWW-Authenticate: Digest realm="http://localhost:8080",qop="auth",nonce="ac1c047ad2cfdbabe1d9a47493f578be70b45f63"
+< Content-Length: 0
+* Ignoring the response-body
+<
+* Connection #0 to host localhost left intact
+* Issue another request to this URL: 'http://localhost:8080/login/welcome'
+* Found bundle for host: 0x1a13bc9f7b0 [serially]
+* Re-using existing connection with host localhost
+* Server auth using Digest with user 'daniel'
+> GET /login/welcome HTTP/1.1
+> Host: localhost:8080
+> Authorization: Digest username="daniel",realm="http://localhost:8080",nonce="ac1c047ad2cfdbabe1d9a47493f578be70b45f63",uri="/login/welcome",cnonce="489ddefb538c67f3aaa9c4b3d2147d9f",nc=00000001,response="420f219b051e7393be0ace151c07c4a2",qop="auth"
+> User-Agent: curl/8.9.1
+> Accept: */*
+>
+< HTTP/1.1 200 OK
+< Date: Thu, 17 Apr 2025 16:55:48 GMT
+< Connection: keep-alive
+< Content-Type: text/plain; charset=UTF-8
+< Content-Length: 23
+< Set-Cookie: sessioncookie=ZGFuaWVsOjIyOjI1OjQ4LjQ5MDc4NTIwMA==; Max-Age=86400
+<
+Welcome, User(1,daniel)* Connection #0 to host localhost left intact
+```
+
+The `/login/welcome` endpoint when hit with the digest returns a `cookie` in `Set-Cookie` header.
+
+The `sessioncookie` from the `Set-Cookie` header is then used to access routes protected by the cookie,
+`/statement` and `/logout`.
+
+`\statement` endpoint:
+
+```bash
+curl -v --cookie "sessioncookie=ZGFuaWVsOjIyOjI1OjQ4LjQ5MDc4NTIwMA==" http://localhost:8080/statement
+```
+
+```
+* Host localhost:8080 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+*   Trying [::1]:8080...
+* Connected to localhost (::1) port 8080
+> GET /statement HTTP/1.1
+> Host: localhost:8080
+> User-Agent: curl/8.9.1
+> Accept: */*
+> Cookie: sessioncookie=ZGFuaWVsOjIyOjI1OjQ4LjQ5MDc4NTIwMA==
+>
+< HTTP/1.1 200 OK
+< Date: Thu, 17 Apr 2025 17:57:22 GMT
+< Connection: keep-alive
+< Content-Type: text/plain; charset=UTF-8
+< Content-Length: 39
+<
+Here is your financial statement daniel* Connection #0 to host localhost left intact
+```
+
+`/logout` endpoint
+
+```bash
+curl -v --cookie "sessioncookie=ZGFuaWVsOjIyOjI1OjQ4LjQ5MDc4NTIwMA==" http://localhost:8080/logout
+```
+
+```
+* Host localhost:8080 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+*   Trying [::1]:8080...
+* Connected to localhost (::1) port 8080
+> GET /logout HTTP/1.1
+> Host: localhost:8080
+> User-Agent: curl/8.9.1
+> Accept: */*
+> Cookie: sessioncookie=ZGFuaWVsOjIyOjI1OjQ4LjQ5MDc4NTIwMA==
+>
+< HTTP/1.1 200 OK
+< Date: Thu, 17 Apr 2025 17:59:13 GMT
+< Connection: keep-alive
+< Content-Type: text/plain; charset=UTF-8
+< Content-Length: 11
+< Set-Cookie: sessioncookie=; Expires=Thu, 01 Jan 1970 00:00:00 GMT
+<
+Logging out* Connection #0 to host localhost left intact
+``` 
+
+## JWT
+
+```bash
+curl -v localhost:8080/login/welcome --digest -u "daniel:rockthejvm"
+```
+
+```
+* Host localhost:8080 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+*   Trying [::1]:8080...
+* Connected to localhost (::1) port 8080
+* Server auth using Digest with user 'daniel'
+> GET /login/welcome HTTP/1.1
+> Host: localhost:8080
+> User-Agent: curl/8.9.1
+> Accept: */*
+>
+* Request completely sent off
+< HTTP/1.1 401 Unauthorized
+< Date: Fri, 18 Apr 2025 06:03:14 GMT
+< Connection: keep-alive
+< WWW-Authenticate: Digest realm="http://localhost:8080",qop="auth",nonce="8bcd51a2ea06484fda991b34538c0db3d2cfcb49"
+< Content-Length: 0
+* Ignoring the response-body
+<
+* Connection #0 to host localhost left intact
+* Issue another request to this URL: 'http://localhost:8080/login/welcome'
+* Found bundle for host: 0x1eb04ce1630 [serially]
+* Re-using existing connection with host localhost
+* Server auth using Digest with user 'daniel'
+> GET /login/welcome HTTP/1.1
+> Host: localhost:8080
+> Authorization: Digest username="daniel",realm="http://localhost:8080",nonce="8bcd51a2ea06484fda991b34538c0db3d2cfcb49",uri="/login/welcome",cnonce="ec42e6862e887426c9f40f880b9ff627",nc=00000001,response="5a350c1b89734999734e3bab80d3478e",qop="auth"
+> User-Agent: curl/8.9.1
+> Accept: */*
+>
+* Request completely sent off
+< HTTP/1.1 200 OK
+< Date: Fri, 18 Apr 2025 06:03:15 GMT
+< Connection: keep-alive
+< Content-Type: text/plain; charset=UTF-8
+< Content-Length: 23
+< Set-Cookie: token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3NDU4MjAxMDQsImlhdCI6MTc0NDk1NjEwNCwNCiAidXNlciI6ICJkYW5pZWwiLA0KICJsZXZlbCI6ICJiYXNpYyINCn0.52ZIDnoNlk2JpL3AjRcQv4_GC1n2ElkxgGYllrmuB_c
+<
+Welcome, User(1,daniel)* Connection #0 to host localhost left intact
+```
+
+```bash
+curl -v localhost:8080/guarded/secret -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3NDU4MjAxMDQsImlhdCI6MTc0NDk1NjEwNCwNCiAidXNlciI6ICJkYW5pZWwiLA0KICJsZXZlbCI6ICJiYXNpYyINCn0.52ZIDnoNlk2JpL3AjRcQv4_GC1n2ElkxgGYllrmuB_c"
+```
+
+```
+* Host localhost:8080 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+*   Trying [::1]:8080...
+* Connected to localhost (::1) port 8080
+> GET /guarded/secret HTTP/1.1
+> Host: localhost:8080
+> User-Agent: curl/8.9.1
+> Accept: */*
+> Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3NDU4MjAxMDQsImlhdCI6MTc0NDk1NjEwNCwNCiAidXNlciI6ICJkYW5pZWwiLA0KICJsZXZlbCI6ICJiYXNpYyINCn0.52ZIDnoNlk2JpL3AjRcQv4_GC1n2ElkxgGYllrmuB_c
+>
+< HTTP/1.1 200 OK
+< Date: Fri, 18 Apr 2025 06:07:46 GMT
+< Connection: keep-alive
+< Content-Type: text/plain; charset=UTF-8
+< Content-Length: 34
+<
+THIS IS THE SECRET, User(1,daniel)* Connection #0 to host localhost left intact
+```
